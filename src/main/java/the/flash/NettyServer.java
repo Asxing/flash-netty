@@ -10,7 +10,7 @@ import io.netty.util.AttributeKey;
 
 public class NettyServer {
 
-    private static final int BEGIN_PORT = 8000;
+    private static final int BEGIN_PORT = 1000;
 
     public static void main(String[] args) {
         NioEventLoopGroup boosGroup = new NioEventLoopGroup();
@@ -18,18 +18,27 @@ public class NettyServer {
 
         final ServerBootstrap serverBootstrap = new ServerBootstrap();
         final AttributeKey<Object> clientKey = AttributeKey.newInstance("clientKey");
+        AttributeKey<Object> serverName = AttributeKey.newInstance("serverName");
         serverBootstrap
                 .group(boosGroup, workerGroup)
                 .channel(NioServerSocketChannel.class)
-                .attr(AttributeKey.newInstance("serverName"), "nettyServer")
+                .attr(serverName, "nettyServer")
                 .childAttr(clientKey, "clientValue")
                 .option(ChannelOption.SO_BACKLOG, 1024)
                 .childOption(ChannelOption.SO_KEEPALIVE, true)
                 .childOption(ChannelOption.TCP_NODELAY, true)
+                .handler(new ChannelInitializer<NioServerSocketChannel>() {
+                    @Override
+                    protected void initChannel(NioServerSocketChannel ch) throws Exception {
+                        System.out.println("服务启动中");
+                        System.out.println("handler attr serverName 对应的值：" + ch.attr(serverName).get());
+                    }
+                })
                 .childHandler(new ChannelInitializer<NioSocketChannel>() {
                     @Override
                     protected void initChannel(NioSocketChannel ch) {
-                        System.out.println(ch.attr(clientKey).get());
+                        System.out.println("新连接建立中");
+                        System.out.println("childHandler attr clientKey 对应的值：" + ch.attr(clientKey).get());
                     }
                 });
         bind(serverBootstrap, BEGIN_PORT);
